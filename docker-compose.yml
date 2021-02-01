@@ -1,38 +1,45 @@
-redis:
-  image: redis:5.0.6
+version: '3.9'
 
-postgres:
-  image: postgres:12.0
-  environment:
-    - POSTGRES_USER:postgres
-    - POSTGRES_PASSWORD:postgres
-  volumes:
-   - /var/data/sentry/postgres:/var/lib/postgresql/data
+services:
+  redis:
+    image: redis:6.0.10
+    networks:
+      sentry:  
 
-sentry:
-  image: sentry:9.1.2
-  links:
-   - redis
-   - postgres
-  ports:
-   - 8080:9000
-  env_file:
-    - sentry-variables.env
+  postgres:
+    image: postgres:12.5
+    environment:
+      - POSTGRES_USER:postgres
+      - POSTGRES_PASSWORD:postgres
+    volumes:
+     - postgres:/var/lib/postgresql/data
+    networks:
+      sentry:  
+  
+  sentry:
+    image: sentry:9.1.2
+    ports:
+     - 9991:9000
+    env_file:
+      - sentry-variables.env
+    networks:
+      sentry:  
+  
+  sentry-cron:
+    image: sentry:9.1.2
+    command: "sentry run cron"
+    env_file:
+      - sentry-variables.env
+    networks:
+      sentry:  
+  
+  sentry-worker-1:
+    image: sentry:9.1.2
+    command: "sentry run worker"
+    env_file:
+      - sentry-variables.env
+    networks:
+      sentry:  
 
-sentry-cron:
-  image: sentry:9.1.2
-  links:
-   - redis
-   - postgres
-  command: "sentry run cron"
-  env_file:
-    - sentry-variables.env
-
-sentry-worker-1:
-  image: sentry:9.1.2
-  links:
-   - redis
-   - postgres
-  command: "sentry run worker"
-  env_file:
-    - sentry-variables.env
+networks:
+  sentry:
